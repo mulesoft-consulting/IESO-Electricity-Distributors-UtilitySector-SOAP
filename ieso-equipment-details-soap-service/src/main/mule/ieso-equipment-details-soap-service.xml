@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <http:listener-config name="api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${http.port}"/>
+    </http:listener-config>
+    <apikit-soap:config httpStatusVarName="httpStatus" name="soapkit-config" port="EquipmentServicePortTypePort" service="EquipmentServicePortTypeService" wsdlLocation="IESO-Equipment-Details.wsdl"/>
+    <configuration-properties doc:name="Configuration properties" doc:id="9ccef676-c00c-453a-b921-0a053d4eaed1" file="mule-artifact.properties" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="2440538c-32c9-408b-ae7a-fbc5ec2335e1" >
+		<db:oracle-connection host="${oracle.db.host}" port="${oracle.db.port}" user="${oracle.db.user}" password="${oracle.db.password}" instance="${oracle.db.instance}" />
+	</db:config>
+	<flow name="api-main">
+        <http:listener config-ref="api-httpListenerConfig" path="/EquipmentWebService">
+            <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
+                <http:headers><![CDATA[#[attributes.protocolHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[attributes.additionalTransportData.statusCode default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[attributes.protocolHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit-soap:router config-ref="soapkit-config">
+            <apikit-soap:message>#[payload]</apikit-soap:message>
+            <apikit-soap:attributes>#[
+              %dw 2.0
+              output application/java
+              ---
+              {
+                  headers: attributes.headers,
+                  method: attributes.method,
+                  queryString: attributes.queryString
+            }]</apikit-soap:attributes>
+        </apikit-soap:router>
+    </flow>
+    <flow name="ListEquipment:\soapkit-config">
+        <db:select doc:name="Select" doc:id="79374d58-df4c-49a0-913b-559781c9d55d" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT EQUIPMENT_ID, EQUIPMENT_NAME, EQUIPMENT_TYPE, REGISTRATION_STATUS, EFFECTIVE_DATE, MODEL_NAME, DESCRIPTION FROM PUBSEC.IESO_EQUIPMENT_DETAILS
+]]></db:sql>
+		</db:select>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+ns soap http://schemas.xmlsoap.org/soap/envelope
+ns ns0 http://ieso-mulesoft.com/equipment-service
+---
+{
+	body: {
+		ns0#ListEquipmentResponse: {
+			equipmentList: payload map ( payload01 , indexOfPayload01 ) -> {
+				equipment_id: payload01.EQUIPMENT_ID,
+				equipment_name: payload01.EQUIPMENT_NAME,
+				equipment_type: payload01.EQUIPMENT_TYPE,
+				registration_status: payload01.REGISTRATION_STATUS,
+				effective_date: payload01.EFFECTIVE_DATE,
+				model_name: payload01.MODEL_NAME,
+				description: payload01.DESCRIPTION
+			}
+		}
+	} write "application/xml"
+}]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="ListEquipmentById:\soapkit-config">
+        <db:select doc:name="Select" doc:id="a4e9decb-ef0f-4cc0-8874-2d482d288c13" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT EQUIPMENT_ID, EQUIPMENT_NAME, EQUIPMENT_TYPE, REGISTRATION_STATUS, EFFECTIVE_DATE, MODEL_NAME, DESCRIPTION FROM PUBSEC.IESO_EQUIPMENT_DETAILS
+WHERE EQUIPMENT_ID = :equipment_id
+]]></db:sql>
+			<db:input-parameters ><![CDATA[#[%dw 2.0
+ns ns0 http://ieso-mulesoft.com/equipment-service
+---
+{
+	"equipment_id": payload.body.ns0#ListEquipmentById.equipment_id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+ns soap http://schemas.xmlsoap.org/soap/envelope
+ns ns0 http://ieso-mulesoft.com/equipment-service
+---
+{
+	body: {
+		ns0#ListEquipmentByIdResponse: {
+			equipmentDetails: {
+				equipment_id: payload.EQUIPMENT_ID,
+				equipment_name: payload.EQUIPMENT_NAME,
+				equipment_type: payload.EQUIPMENT_TYPE,
+				registration_status: payload.REGISTRATION_STATUS,
+				effective_date: payload.EFFECTIVE_DATE,
+				model_name: payload.MODEL_NAME,
+				description: payload.DESCRIPTION
+			}
+		}
+	} write "application/xml"
+}]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="AddEquipment:\soapkit-config">
+        <set-variable value="#[uuid()]" doc:name="equipmentId" doc:id="610eacb3-43f2-4e65-ad20-452b009f0a1a" variableName="equipmentId"/>
+		<db:insert doc:name="Insert" doc:id="94cee0e9-be71-4108-8e1b-c4f59008979e" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO PUBSEC.IESO_EQUIPMENT_DETAILS (EQUIPMENT_ID, EQUIPMENT_NAME, EQUIPMENT_TYPE, REGISTRATION_STATUS, EFFECTIVE_DATE, MODEL_NAME, DESCRIPTION) 
+VALUES(:equipment_id, :equipment_name, :equipment_type, :registration_status, :effective_date, :model_name, :description)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+ns ns0 http://ieso-mulesoft.com/equipment-service
+---
+{
+	equipment_id: vars.equipmentId,
+	equipment_name: payload.body.ns0#AddEquipment.equipment_name,
+	equipment_type: payload.body.ns0#AddEquipment.equipment_type,
+	registration_status: payload.body.ns0#AddEquipment.registration_status,
+	effective_date: payload.body.ns0#AddEquipment.effective_date,
+	model_name: payload.body.ns0#AddEquipment.model_name,
+	description: payload.body.ns0#AddEquipment.description
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+ns soap http://schemas.xmlsoap.org/soap/envelope
+ns ns0 http://ieso-mulesoft.com/equipment-service
+---
+{
+	body: {
+		ns0#AddEquipmentResponse: {
+			equipment_id: vars.equipmentId
+		}
+	} write "application/xml"
+}]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

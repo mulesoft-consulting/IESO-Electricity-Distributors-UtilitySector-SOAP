@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:oauth="http://www.mulesoft.org/schema/mule/oauth" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:facility-management-system-api="http://www.mulesoft.org/schema/mule/facility-management-system-api" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/facility-management-system-api http://www.mulesoft.org/schema/mule/facility-management-system-api/current/mule-facility-management-system-api.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/oauth http://www.mulesoft.org/schema/mule/oauth/current/mule-oauth.xsd">
+    <http:listener-config name="registration-management-process-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${http.port}" />
+    </http:listener-config>
+    <apikit:config name="registration-management-process-api-config" api="resource::7a2d6726-ddd0-4fe3-b388-1a72417c8bb2:registration-management-process-api:1.0.0:raml:zip:registration-management-process-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration-properties doc:name="Configuration properties" doc:id="e1eaea0a-9700-4142-9da1-772b4be792d8" file="mule-artifact.properties" />
+	<api-gateway:autodiscovery apiId="${api.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="6ac99ba0-1bd9-4cf3-a8f5-c8a8484c3a35" flowRef="registration-management-process-api-main" />
+	<facility-management-system-api:config name="Facility_Management_System_API_Config" doc:name="Facility Management System API Config" doc:id="173094de-7810-49e5-818e-4a696a85995d" property_host="${facility.system.api.host}" property_port="${facility.system.api.port}" property_protocol="${facility.system.api.protocol}" property_basePath="${facility.system.api.basePath}" />
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="468e37b5-122a-4be3-9d41-391c9dca9851" basePath="${equipment.system.api.basePath}" >
+		<http:request-connection host="${equipment.system.api.host}" port="${equipment.system.api.port}" >
+			<http:authentication >
+				<oauth:authorization-code-grant-type externalCallbackUrl="${oauth.external.callback.url}" state="Mule" localAuthorizationUrl="${oauth.local.authorization.url}" authorizationUrl="${oauth.authorization.url}" clientId="${oauth.client.id}" clientSecret="${oauth.client.secret}" scopes="alloweverything" tokenUrl="${oauth.token.url}" localCallbackConfig="registration-management-process-api-httpListenerConfig" localCallbackConfigPath="/callback" resourceOwnerId="IESO" localAuthorizationUrlResourceOwnerId="IESO">
+					<oauth:token-manager objectStore="Object_store" />
+				</oauth:authorization-code-grant-type>
+			</http:authentication>
+		</http:request-connection>
+	</http:request-config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="52bf2d87-0a29-4b1e-97e9-83e0da7beec2" config-ref="ObjectStore_Config"/>
+	<os:config name="ObjectStore_Config" doc:name="ObjectStore Config" doc:id="9037f8dd-1ea3-4e28-b12d-c6dbbe4c948c" >
+		<os:connection >
+			<reconnection >
+				<reconnect-forever />
+			</reconnection>
+		</os:connection>
+	</os:config>
+	<flow name="registration-management-process-api-main">
+        <http:listener config-ref="registration-management-process-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="registration-management-process-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="registration-management-process-api-console">
+        <http:listener config-ref="registration-management-process-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="registration-management-process-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\registration:registration-management-process-api-config">
+        <facility-management-system-api:retrieve-all-registered-facilities doc:name="Retrieve registered facilities" doc:id="b5314525-8f5e-46a6-af9c-46da4337982a" config-ref="Facility_Management_System_API_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="a572d440-f31a-4408-b5ed-f784c33a9930" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+valuesOf(payload groupBy (item) -> item.SUBSTATION_ID) map (item, index) -> {
+    "SUBSTATION_ID": item.SUBSTATION_ID[0],
+    "SUBSTATION_NAME": item.SUBSTATION_NAME[0],
+    "REGISTRATION_STATUS": item.REGISTRATION_STATUS[0],
+    "ELECTRICAL_ZONE": item.ELECTRICAL_ZONE[0],
+    "ADDRESS1": item.ADDRESS1[0],
+    "ADDRESS2": item.ADDRESS2[0],
+    "CITY": item.CITY[0],
+    "PROVINCE": item.PROVINCE[0],
+    "POSTAL_CODE": item.POSTAL_CODE[0],
+    "COUNTRY": item.COUNTRY[0],
+    "EFFECTIVE_DATE": item.EFFECTIVE_DATE[0],
+    "EQUIPMENT_ID_LIST": item.EQUIPMENT_ID
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="011947ea-339a-4d0d-9eeb-b442d2a0b9de" name="registration-management-process-api-Sub_Flow"/>
+    </flow>
+    <flow name="get:\registration\(facility_id):registration-management-process-api-config">
+        <facility-management-system-api:retrieve-registered-facility-by-id doc:name="Retrieve registered facility by ID" doc:id="b23ff8ab-2f6e-4c03-8b8c-faf2873844cd" config-ref="Facility_Management_System_API_Config" id="#[attributes.uriParams.facility_id]" />
+		<ee:transform doc:name="Transform Message" doc:id="fc276de8-4d0b-4b73-99cb-2117f85164f3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+valuesOf(payload groupBy (item) -> item.SUBSTATION_ID) map (item, index) -> {
+    "SUBSTATION_ID": item.SUBSTATION_ID[0],
+    "SUBSTATION_NAME": item.SUBSTATION_NAME[0],
+    "REGISTRATION_STATUS": item.REGISTRATION_STATUS[0],
+    "ELECTRICAL_ZONE": item.ELECTRICAL_ZONE[0],
+    "ADDRESS1": item.ADDRESS1[0],
+    "ADDRESS2": item.ADDRESS2[0],
+    "CITY": item.CITY[0],
+    "PROVINCE": item.PROVINCE[0],
+    "POSTAL_CODE": item.POSTAL_CODE[0],
+    "COUNTRY": item.COUNTRY[0],
+    "EFFECTIVE_DATE": item.EFFECTIVE_DATE[0],
+    "EQUIPMENT_ID_LIST": item.EQUIPMENT_ID
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="4e65436b-8e38-41f9-aa24-83035f9e4c98" name="registration-management-process-api-Sub_Flow"/>
+		<ee:transform doc:name="Transform Message" doc:id="88e86e79-9ab8-4246-9570-b4d9c709084a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    </flow>
+	<sub-flow name="registration-management-process-api-Sub_Flow" doc:id="96c4738c-8e66-45c3-a721-c2cab0fc2a9b">
+		<set-variable value="#[[]]" doc:name="resultPayload" doc:id="b368f944-7918-4efb-8e35-5dda2a68cd1a" variableName="resultPayload" />
+		<foreach doc:name="For Each" doc:id="4d911483-35a5-4d74-9fc5-a30032745966" collection="#[payload]">
+			<set-variable value="#[[]]" doc:name="equipmentList" doc:id="3065decf-dba1-4a81-b33c-4c6c9905c0fd" variableName="equipmentList" />
+			<foreach doc:name="For Each" doc:id="b194bdd6-798e-40a6-b64b-0339325e229a" collection="#[payload.EQUIPMENT_ID_LIST]">
+				<ee:transform doc:name="Transform Message" doc:id="cf173549-5cd8-4f57-8f35-f814b51a5182">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output text/xml
+ns soapenv http://schemas.xmlsoap.org/soap/envelope/
+ns equ http://ieso-mulesoft.com/equipment-service
+---
+soapenv#Envelope: {
+	soapenv#Body: {
+		equ#ListEquipmentById: {
+			equipment_id: payload
+		}
+	} 	
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+				<http:request method="POST" doc:name="Retrieve Equipment Details by ID" doc:id="d59ecfa5-0aea-4b5e-be3a-8e6d58aad899" config-ref="HTTP_Request_configuration" path="/">
+				<http:body><![CDATA[#[output text/xml --- payload]]]></http:body>
+					<http:headers><![CDATA[#[output application/java
+---
+{
+	"SOAPAction" : "http://ieso-mulesoft.com/equipment-service/list-equipment-by-id",
+	"client_secret" : p('oauth.client.id'),
+	"Content-Type" : "text/xml",
+	"client_id" : "Ge7jwCHseEbh2YneE3N4F5liUH6nQAFE_orOjyeL"
+}]]]></http:headers>
+			</http:request>
+				<ee:transform doc:name="Transform Message" doc:id="3b409b6c-c31f-42d6-b683-7a047968d5f4">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://ieso-mulesoft.com/equipment-service
+ns ns1 http://schemas.xmlsoap.org/soap/envelope/
+---
+{
+	"EQUIPMENT_ID": payload.ns1#Envelope.ns1#Body.ns0#ListEquipmentByIdResponse.equipmentDetails.equipment_id, 
+    "EQUIPMENT_NAME": payload.ns1#Envelope.ns1#Body.ns0#ListEquipmentByIdResponse.equipmentDetails.equipment_name,
+    "EQUIPMENT_TYPE": payload.ns1#Envelope.ns1#Body.ns0#ListEquipmentByIdResponse.equipmentDetails.equipment_type,
+    "REGISTRATION_STATUS": payload.ns1#Envelope.ns1#Body.ns0#ListEquipmentByIdResponse.equipmentDetails.registration_status,
+    "EFFECTIVE_DATE": payload.ns1#Envelope.ns1#Body.ns0#ListEquipmentByIdResponse.equipmentDetails.effective_date,
+    "MODEL_NAME": payload.ns1#Envelope.ns1#Body.ns0#ListEquipmentByIdResponse.equipmentDetails.model_name,
+    "DESCRIPTION": payload.ns1#Envelope.ns1#Body.ns0#ListEquipmentByIdResponse.equipmentDetails.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[output application/json --- vars.equipmentList + payload]" doc:name="equipmentList" doc:id="6c571b12-a220-4ab5-9645-606a945039b6" variableName="equipmentList" />
+			</foreach>
+			<ee:transform doc:name="Transform Message" doc:id="d20ca1ee-3789-448b-ac9f-594a6947a509">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"SUBSTATION_ID": payload.SUBSTATION_ID,
+    "SUBSTATION_NAME": payload.SUBSTATION_NAME,
+    "REGISTRATION_STATUS": payload.REGISTRATION_STATUS,
+    "ELECTRICAL_ZONE": payload.ELECTRICAL_ZONE,
+    "ADDRESS1": payload.ADDRESS1,
+    "ADDRESS2": payload.ADDRESS2,
+    "CITY": payload.CITY,
+    "PROVINCE": payload.PROVINCE,
+    "POSTAL_CODE": payload.POSTAL_CODE,
+    "COUNTRY": payload.COUNTRY,
+    "EFFECTIVE_DATE": payload.EFFECTIVE_DATE,
+    "EQUIPMENT_LIST": vars.equipmentList
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			<set-variable value="#[output application/json --- vars.resultPayload + payload]" doc:name="resultPayload" doc:id="d1b8b8e7-a2a6-4d7b-a3db-6e0f5a071e1c" variableName="resultPayload" />
+		</foreach>
+		<ee:transform doc:name="Transform Message" doc:id="45e0f386-69e2-4852-bcbd-f4140565585f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.resultPayload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

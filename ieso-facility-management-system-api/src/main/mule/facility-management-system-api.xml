@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <http:listener-config name="facility-management-system-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${http.port}" />
+    </http:listener-config>
+    <apikit:config name="facility-management-system-api-config" api="resource::7a2d6726-ddd0-4fe3-b388-1a72417c8bb2:facility-management-system-api:1.0.2:raml:zip:facility-management-system-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration-properties doc:name="Configuration properties" doc:id="b4663b93-c734-4fb7-858e-a8a8e7fc30c1" file="mule-artifact.properties" />
+    <api-gateway:autodiscovery apiId="${api.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="7da2789e-aad0-45bb-9617-0781975b1ca2" flowRef="facility-management-system-api-main" />
+    <db:config name="Database_Config" doc:name="Database Config" doc:id="5c45d203-78f3-4131-85b2-1a207f6406c8">
+        <db:oracle-connection host="${oracle.db.host}" port="${oracle.db.port}" user="${oracle.db.user}" password="${oracle.db.password}" instance="${oracle.db.instance}" />
+    </db:config>
+    <flow name="facility-management-system-api-main">
+        <http:listener config-ref="facility-management-system-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="facility-management-system-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="facility-management-system-api-console">
+        <http:listener config-ref="facility-management-system-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="facility-management-system-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+	<flow name="get:\facility:facility-management-system-api-config">
+		<db:select doc:name="Select" doc:id="5ac5fdf1-5aa9-4109-b190-038b4609df3f" config-ref="Database_Config">
+            <db:sql><![CDATA[SELECT SUBSTATION_ID, SUBSTATION_NAME, REGISTRATION_STATUS, ELECTRICAL_ZONE, ADDRESS1, ADDRESS2, CITY, PROVINCE, POSTAL_CODE, COUNTRY, EFFECTIVE_DATE, EQUIPMENT_ID FROM PUBSEC.IESO_FACILITIES]]></db:sql>
+        </db:select>
+		<ee:transform doc:name="Transform Message" doc:id="d7e5bf12-a397-4ec4-99df-cd4f1435bc5b">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\facility\(id):facility-management-system-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="29858cdb-689a-49e2-ac3a-7b194776b76f" message="Going to retrieve from database!!!"/>
+		<db:select doc:name="Select" doc:id="f795ea7c-039b-45e6-80b2-7199e790c2a9" config-ref="Database_Config">
+            <db:sql><![CDATA[SELECT SUBSTATION_ID, SUBSTATION_NAME, REGISTRATION_STATUS, ELECTRICAL_ZONE, ADDRESS1, ADDRESS2, CITY, PROVINCE, POSTAL_CODE, COUNTRY, EFFECTIVE_DATE, EQUIPMENT_ID FROM PUBSEC.IESO_FACILITIES
+WHERE SUBSTATION_ID = :SUBSTATION_ID]]></db:sql>
+            <db:input-parameters><![CDATA[#[{
+	"SUBSTATION_ID": attributes.uriParams.id
+}]]]></db:input-parameters>
+        </db:select>
+        <ee:transform doc:name="Transform Message" doc:id="b4e1c4ae-2229-4801-8eaa-e4f03dd2343d">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\facility:application\json:facility-management-system-api-config">
+		<set-variable value="#[payload]" doc:name="inputPayload" doc:id="7cc4488e-b10c-423c-9a57-72a72b7fb6bf" variableName="inputPayload" />
+        <set-variable value="#[uuid()]" doc:name="facilityId" doc:id="b0a49e38-0259-4d57-84d3-4454910e63f5" variableName="facilityId" />
+        <foreach doc:name="For Each" doc:id="88fa725b-fabc-4ac3-8e07-deb622dce7f4" collection="#[payload.EQUIPMENT_ID]">
+            <db:insert doc:name="Insert" doc:id="a167bee0-099c-4eb6-9bfe-3d98218b5ce6" config-ref="Database_Config">
+                <db:sql><![CDATA[INSERT INTO PUBSEC.IESO_FACILITIES (SUBSTATION_ID, SUBSTATION_NAME, REGISTRATION_STATUS, ELECTRICAL_ZONE, ADDRESS1, ADDRESS2, CITY, PROVINCE, POSTAL_CODE, COUNTRY, EFFECTIVE_DATE, EQUIPMENT_ID) 
+VALUES (:SUBSTATION_ID, :SUBSTATION_NAME, :REGISTRATION_STATUS, :ELECTRICAL_ZONE, :ADDRESS1, :ADDRESS2, :CITY, :PROVINCE, :POSTAL_CODE, :COUNTRY, :EFFECTIVE_DATE, :EQUIPMENT_ID)]]></db:sql>
+                <db:input-parameters><![CDATA[#[{
+	"SUBSTATION_ID": vars.facilityId,
+	"SUBSTATION_NAME": vars.inputPayload.SUBSTATION_NAME,
+	"REGISTRATION_STATUS": vars.inputPayload.REGISTRATION_STATUS,
+	"ELECTRICAL_ZONE": vars.inputPayload.ELECTRICAL_ZONE,
+	"ADDRESS1": vars.inputPayload.ADDRESS1,
+	"ADDRESS2": vars.inputPayload.ADDRESS2,
+	"CITY": vars.inputPayload.CITY,
+	"PROVINCE": vars.inputPayload.PROVINCE,
+	"POSTAL_CODE": vars.inputPayload.POSTAL_CODE,
+	"COUNTRY": vars.inputPayload.COUNTRY,
+	"EFFECTIVE_DATE": vars.inputPayload.EFFECTIVE_DATE,
+	"EQUIPMENT_ID": payload
+}]]]></db:input-parameters>
+            </db:insert>
+        </foreach>
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  FacilityID: vars.facilityId
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

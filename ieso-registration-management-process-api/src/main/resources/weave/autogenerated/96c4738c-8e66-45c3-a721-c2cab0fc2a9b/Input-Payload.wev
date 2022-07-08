@@ -1,0 +1,5 @@
+%dw 2.0
+
+type auto_96c4738c_8e66_45c3_a721_c2cab0fc2a9b_Input_Payload = Array<{|  SUBSTATION_ID: Any,   SUBSTATION_NAME: Any,   REGISTRATION_STATUS: Any,   ELECTRICAL_ZONE: Any,   ADDRESS1: Any,   ADDRESS2: Any,   CITY: Any,   PROVINCE: Any,   POSTAL_CODE: Any,   COUNTRY: Any,   EFFECTIVE_DATE: Any,   EQUIPMENT_ID_LIST: Array<Any>
+|}>
+

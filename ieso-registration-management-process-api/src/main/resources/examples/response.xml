@@ -1,0 +1,15 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns0:ListEquipmentByIdResponse xmlns:ns0="http://ieso-mulesoft.com/equipment-service">
+            <equipmentDetails>
+                <equipment_id>def</equipment_id>
+                <equipment_name>def</equipment_name>
+                <equipment_type>def</equipment_type>
+                <registration_status>New</registration_status>
+                <effective_date>2022-05-01</effective_date>
+                <model_name>def</model_name>
+                <description>def</description>
+            </equipmentDetails>
+        </ns0:ListEquipmentByIdResponse>
+    </soap:Body>
+</soap:Envelope>

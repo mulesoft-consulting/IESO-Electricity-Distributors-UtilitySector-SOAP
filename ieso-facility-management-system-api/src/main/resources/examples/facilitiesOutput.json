@@ -1,0 +1,16 @@
+[
+    {
+        "COUNTRY": "CA",
+        "PROVINCE": "abc province",
+        "ADDRESS2": "2nd street",
+        "CITY": "abc city",
+        "REGISTRATION_STATUS": "New",
+        "ADDRESS1": "abc lane",
+        "EFFECTIVE_DATE": "2022-05-01",
+        "SUBSTATION_NAME": "abc",
+        "SUBSTATION_ID": "bd7be1a6-7776-405a-a4d0-64f3aa607d62",
+        "POSTAL_CODE": "12342",
+        "ELECTRICAL_ZONE": "1",
+        "EQUIPMENT_ID": "abc"
+    }
+]

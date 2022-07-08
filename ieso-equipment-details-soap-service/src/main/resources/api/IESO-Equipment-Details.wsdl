@@ -1,0 +1,163 @@
+<wsdl:definitions name="EquipmentServicePortTypeService" targetNamespace="http://ieso-mulesoft.com/equipment-service" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://ieso-mulesoft.com/equipment-service" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<wsdl:types>
+		<xs:schema elementFormDefault="unqualified" targetNamespace="http://ieso-mulesoft.com/equipment-service" version="1.0" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://ieso-mulesoft.com/equipment-service" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+			<xs:element name="APIUsageInformation">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="apiCallsRemaining" type="xs:integer"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="AuthenticationHeader">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="apiKey" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="EquipmentFault">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="errorMessage" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:complexType name="ListEquipment">
+				<xs:sequence/>
+			</xs:complexType>
+			<xs:complexType name="ListEquipmentResponse">
+				<xs:sequence>
+					<xs:element maxOccurs="unbounded" minOccurs="0" name="equipmentList" type="tns:Equipment"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="Equipment">
+				<xs:sequence>
+					<xs:element name="equipment_id" type="xs:string"/>
+					<xs:element name="equipment_name" type="xs:string"/>
+					<xs:element name="equipment_type" type="xs:string"/>
+					<xs:element name="registration_status" type="xs:string"/>
+					<xs:element name="effective_date" type="xs:string"/>
+					<xs:element name="model_name" type="xs:string"/>
+					<xs:element name="description" type="xs:string"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:element name="ListEquipment" nillable="true" type="tns:ListEquipment"/>
+			<xs:element name="ListEquipmentResponse" nillable="true" type="tns:ListEquipmentResponse"/>
+			<xs:element name="ListEquipmentById">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="equipment_id" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:complexType name="ListEquipmentByIdResponse">
+				<xs:sequence>
+					<xs:element maxOccurs="1" minOccurs="0" name="equipmentDetails" type="tns:Equipment"/>
+				</xs:sequence>
+			</xs:complexType>
+			<xs:element name="ListEquipmentByIdResponse" nillable="true" type="tns:ListEquipmentByIdResponse"/>
+			<xs:element name="AddEquipment">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="equipment_name" type="xs:string"/>
+						<xs:element name="equipment_type" type="xs:string"/>
+						<xs:element name="registration_status" type="xs:string"/>
+						<xs:element name="effective_date" type="xs:string"/>
+						<xs:element name="model_name" type="xs:string"/>
+						<xs:element name="description" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="AddEquipmentResponse">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="equipment_id" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:schema>
+	</wsdl:types>
+	<wsdl:message name="ListEquipment">
+		<wsdl:part element="tns:ListEquipment" name="parameters"/>
+	</wsdl:message>
+	<wsdl:message name="ListEquipmentResponse">
+		<wsdl:part element="tns:ListEquipmentResponse" name="parameters"/>
+	</wsdl:message>
+	<wsdl:message name="ListEquipmentById">
+		<wsdl:part element="tns:ListEquipmentById" name="body"/>
+	</wsdl:message>
+	<wsdl:message name="ListEquipmentByIdResponse">
+		<wsdl:part element="tns:ListEquipmentByIdResponse" name="body"/>
+	</wsdl:message>
+	<wsdl:message name="AddEquipment">
+		<wsdl:part element="tns:AddEquipment" name="body"/>
+	</wsdl:message>
+	<wsdl:message name="AddEquipmentResponse">
+		<wsdl:part element="tns:AddEquipmentResponse" name="body"/>
+	</wsdl:message>
+	<wsdl:message name="EquipmentFaultException">
+		<wsdl:part element="tns:EquipmentFault" name="EquipmentFaultException"/>
+	</wsdl:message>
+	
+	<wsdl:portType name="EquipmentServicePortType">
+		<wsdl:operation name="ListEquipment">
+			<wsdl:input message="tns:ListEquipment" name="ListEquipment"/>
+			<wsdl:output message="tns:ListEquipmentResponse" name="ListEquipmentResponse"/>
+			<wsdl:fault message="tns:EquipmentFaultException" name="EquipmentFaultException"/>
+		</wsdl:operation>
+		<wsdl:operation name="ListEquipmentById">
+			<wsdl:input message="tns:ListEquipmentById" name="ListEquipmentById"/>
+			<wsdl:output message="tns:ListEquipmentByIdResponse" name="ListEquipmentByIdResponse"/>
+			<wsdl:fault message="tns:EquipmentFaultException" name="EquipmentFaultException"/>
+		</wsdl:operation>
+		<wsdl:operation name="AddEquipment">
+			<wsdl:input message="tns:AddEquipment" name="AddEquipment"/>
+			<wsdl:output message="tns:AddEquipmentResponse" name="AddEquipmentResponse"/>
+			<wsdl:fault message="tns:EquipmentFaultException" name="EquipmentFaultException"/>
+		</wsdl:operation>		
+	</wsdl:portType>
+	<wsdl:binding name="EquipmentServicePortTypeServiceSoapBinding" type="tns:EquipmentServicePortType">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name="ListEquipment">
+			<soap:operation soapAction="http://ieso-mulesoft.com/equipment-service/list-equipment" style="document"/>
+			<wsdl:input name="ListEquipment">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="ListEquipmentResponse">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="EquipmentFaultException">
+				<soap:fault name="EquipmentFaultException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="ListEquipmentById">
+			<soap:operation soapAction="http://ieso-mulesoft.com/equipment-service/list-equipment-by-id" style="document"/>
+			<wsdl:input name="ListEquipmentById">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="ListEquipmentByIdResponse">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="EquipmentFaultException">
+				<soap:fault name="EquipmentFaultException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="AddEquipment">
+			<soap:operation soapAction="http://ieso-mulesoft.com/equipment-service/add-equipment" style="document"/>
+			<wsdl:input name="AddEquipment">
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output name="AddEquipmentResponse">
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="EquipmentFaultException">
+				<soap:fault name="EquipmentFaultException" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>		
+	</wsdl:binding>
+	<wsdl:service name="EquipmentServicePortTypeService">
+		<wsdl:port binding="tns:EquipmentServicePortTypeServiceSoapBinding" name="EquipmentServicePortTypePort">
+			<soap:address location="https://ieso-mulesoft.com/"/>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>
